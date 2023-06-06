@@ -1,9 +1,5 @@
-public class SubmissionInterface {
-    public boolean submitJob(String job) {
-        return true;
-    }
+public interface SubmissionInterface {
+    public boolean submitJob(String job);
 
-    public void displaySubmissionQueue() {
-
-    }
+    public void displaySubmissionQueue();
 }

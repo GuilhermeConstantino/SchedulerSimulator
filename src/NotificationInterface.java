@@ -1,5 +1,3 @@
-public class NotificationInterface {
-    public void display(String text) {
-
-    }
+public interface NotificationInterface {
+    public void display(String text);
 }

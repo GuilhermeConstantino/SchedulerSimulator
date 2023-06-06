@@ -1,21 +1,11 @@
-public class ControllInterface {
-    public void startSimulation() {
+public interface ControllInterface {
+    public void startSimulation();
 
-    }
+    public void suspendSimulation();
 
-    public void suspendSimulation() {
+    public void resumeSimulation();
 
-    }
+    public void stopSimulation();
 
-    public void resumeSimulation() {
-
-    }
-
-    public void stopSimulation() {
-
-    }
-
-    public void displayProcessesQueues() {
-
-    }
+    public void displayProcessesQueues();
 }

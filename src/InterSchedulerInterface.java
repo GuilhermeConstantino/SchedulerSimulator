@@ -1,11 +1,7 @@
 
-public class InterSchedulerInterface {
+public interface InterSchedulerInterface {
 
-    public void addProcess(Process process) {
+    public void addProcess(Process process);
 
-    }
-
-    public int getProcessLoad() {
-        return 1;
-    }
+    public int getProcessLoad();
 }
