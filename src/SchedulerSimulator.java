@@ -3,8 +3,11 @@ public class SchedulerSimulator {
     public static void main(String[] args) {
         // primeiro argumento é a carga máxima de processos, segundo argumento é o
         // quantum
-        Helpers helpers = new Helpers();
+        int maxProcessLoad = 10;
+        int quantum = 200;
+        UserInterface userInterface = new UserInterface();
+        LongTermScheduler longTermScheduler = new LongTermScheduler();
+        ShortTermScheduler shortTermScheduler = new ShortTermScheduler();
 
-        System.out.println(helpers.isNumeric(args[0]));
     }
 }
