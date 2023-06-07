@@ -18,4 +18,8 @@ public class Process {
         this.processPriority = processPriority;
     }
 
+    public String getFileName() {
+        return fileName;
+    }
+
 }

@@ -6,7 +6,8 @@ public class UserInterface extends Thread implements NotificationInterface {
 
     }
 
-    /// design pattern singleton garante que haja apenas uma instância desta classe
+    /// padrão de design singleton garante que haja apenas uma instância desta
+    /// classe
     public static UserInterface getUserInterface() {
         if (userInterface == null) {
             return new UserInterface();
