@@ -9,11 +9,8 @@ import java.util.List;
  * @author Guilherme Constantino
  */
 public class ShortTermScheduler extends Thread implements InterSchedulerInterface, ControllInterface {
-    private List<Process> readyProcesses = new ArrayList<>(); // fila de processos onde a posição 0 representa um
-                                                              // processo em execução
-    private List<Process> blockedProcesses = new ArrayList<>(); // fila de processos que aguardando a
-                                                                // conclusão de
-    // seu tempo de block
+    private List<Process> readyProcesses = new ArrayList<>(); // fila de processos prontos
+    private List<Process> blockedProcesses = new ArrayList<>(); // fila de processos bloqueados
     private UserInterface userInterface = UserInterface.getUserInterface(); // instância de interface de usuario
     private LongTermScheduler longTermScheduler; // instância do escalonador
 
@@ -23,9 +20,10 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
     private int timeSlice = -1; // fatia de tempo do escalonador, valores negativos indicam que ainda não foi
                                 // inicializado
     private int totalCicles = 0; // contador de ciclos totais
+    private int executionCicles = 0; // contador de operacoes de execute
 
-    public int getTotalCicles() {
-        return totalCicles;
+    public int getExecutionCicles() {
+        return executionCicles;
     }
 
     private String selectedAlgorithm = "";
@@ -77,7 +75,8 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
                         } else {
                             continue; // reinicia o loop para aguardar os novos processos
                         }
-                    } else {
+                    } else { // este caso ocorre quando ha processos bloquados mas nao ha processos em
+                             // execucao
                         tickBlockedProcesses(); // simula a contagem de tempo dos processos bloquados e reinicia o ciclo
                         try {
                             Thread.sleep(timeSlice); // simula o tempo gasto por cada processo para executar uma
@@ -85,12 +84,13 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
+
                         totalCicles++;
 
                         continue;
                     }
                 } else {
-                    totalCicles++;
+
                     executingProcess = readyProcesses.remove(0);
                     preempt = false;
                     while (!preempt) {
@@ -110,10 +110,14 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
                             userInterface.displayNotification("Block " + "["
                                     + nextStatement.blockPeriod + "] " + executingProcess.getFileName());
                             executingProcess = null;
+                            totalCicles++;
+                            executionCicles++;
                             preempt = true;
                         } else if (nextStatement.command.equals("execute")) {
 
                             userInterface.displayNotification("Execute " + executingProcess.getFileName());
+                            totalCicles++;
+                            executionCicles++;
                             executingProcess.removeNextBehaviourStatement();
                             if (selectedAlgorithm.equals("RR")) { // caso o algoritmo seja RR, considera-se que o
                                                                   // processo
@@ -123,7 +127,6 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
                                 executingProcess = null;
                                 preempt = true;
                             } else if (selectedAlgorithm.equals("FIFO")) {
-
                                 continue;
                             }
 
@@ -173,6 +176,11 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
 
     }
 
+    /**
+     * Inicializa a simulacao
+     * 
+     * @author Guilherme Constantino
+     */
     @Override
     public void startSimulation() {
         if (maxProcessLoad < 1) {
@@ -194,6 +202,11 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
         }
     }
 
+    /**
+     * Suspense a simulacao
+     * 
+     * @author Guilherme Constantino
+     */
     @Override
     public void suspendSimulation() {
         if (status.equals("running")) {
@@ -205,6 +218,11 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
         }
     }
 
+    /**
+     * Continua a simulacao
+     * 
+     * @author Guilherme Constantino
+     */
     @Override
     public void resumeSimulation() {
         if (status.equals("suspended")) {
@@ -216,6 +234,11 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
         }
     }
 
+    /**
+     * Encerra a simulacao
+     * 
+     * @author Guilherme Constantino
+     */
     @Override
     public void stopSimulation() {
         if (status.equals("running") || status.equals("suspended")) {
@@ -227,6 +250,12 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
         }
     }
 
+    /**
+     * Exibe o processo em execucao e as filas de processos prontos e bloquados em
+     * uma String
+     * 
+     * @author Guilherme Constantino
+     */
     @Override
     public void displayProcessesQueues() {
         String queueDescription = "";
@@ -264,7 +293,15 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
     }
 
     public String getTranslatedStatus() {
-        if (status == "")
+        if (status == "uninitialized") {
+            return "nao inicializada";
+        } else if (status == "running") {
+            return "executando";
+        } else if (status == "suspended") {
+            return "suspensa";
+        } else {
+            return "encerrada";
+        }
     }
 
     public String getSelectedAlgorithm() {
@@ -285,6 +322,10 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
 
     public List<Process> getBlockedProcesses() {
         return blockedProcesses;
+    }
+
+    public int getTotalCicles() {
+        return totalCicles;
     }
 
     public void setBlockedProcesses(List<Process> blockedProcesses) {

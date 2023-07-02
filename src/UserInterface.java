@@ -71,21 +71,44 @@ public class UserInterface extends Thread implements NotificationInterface {
     }
 
     public void run() {
+        int totalCicles;
+        int timeSlice = shortTermScheduler.getTimeSlice();
+        int executeCicles;
 
         startUI();
 
         while (true) {
             try {
-                Thread.sleep(shortTermScheduler.getTimeSlice() / 2); // espera para poupar loops excessivos
+                Thread.sleep(timeSlice / 2); // espera para poupar loops excessivos
             } catch (InterruptedException e) {
 
                 e.printStackTrace();
             }
             longTermScheduler.displaySubmissionQueue();
             shortTermScheduler.displayProcessesQueues();
-            statistics = "Estado: " + shortTermScheduler.getStatus();
-            statistics = statistics + "\nCiclos totais: " + shortTermScheduler.getTotalCicles();
+            statistics = "Simulacao: " + shortTermScheduler.getTranslatedStatus();
 
+            totalCicles = shortTermScheduler.getTotalCicles();
+            executeCicles = shortTermScheduler.getExecutionCicles();
+            timeSlice = shortTermScheduler.getTimeSlice();
+
+            statistics = statistics + "\nTempo simulado decorrido: "
+                    + String.format("%.3f", (Double.parseDouble(Integer.toString(totalCicles * timeSlice)) / 1000))
+                    + " seg ("
+                    + totalCicles + " ciclos)";
+            statistics = statistics + "\nUso da CPU simulado: "
+                    + String.format("%.3f", (Double.parseDouble(Integer.toString(executeCicles * timeSlice)) / 1000))
+                    + " seg ("
+                    + executeCicles + " ciclos)";
+            if (totalCicles != 0) {
+                statistics = statistics + "\nAproveitamento de CPU: "
+                        + String.format("%.2f", Double.parseDouble(Integer.toString(executeCicles))
+                                / Double.parseDouble(Integer.toString(totalCicles)) * 100)
+                        + "%";
+            } else {
+                statistics = statistics + "\nAproveitamento de CPU: "
+                        + "-";
+            }
             displayStatistics(statistics);
 
         }
