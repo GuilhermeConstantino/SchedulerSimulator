@@ -78,6 +78,8 @@ public class UserInterface extends Thread implements NotificationInterface {
         String simulatedTime;
         String cpuSimulationTime;
         String cpuUsage;
+        String throughPutPerCicle;
+        String throughPutPerTime;
 
         startUI();
 
@@ -99,6 +101,17 @@ public class UserInterface extends Thread implements NotificationInterface {
                     (Double.parseDouble(Integer.toString(executeCicles * timeSlice)) / 1000));
             cpuUsage = String.format("%.2f", Double.parseDouble(Integer.toString(executeCicles))
                     / Double.parseDouble(Integer.toString(totalCicles)) * 100);
+            throughPutPerCicle = String.format("%.2f",
+                    totalConcludedProcesses / (Double.parseDouble(Integer.toString(totalCicles))));
+            throughPutPerTime = String.format("%.2f",
+                    Double.parseDouble(Integer.toString(totalConcludedProcesses))
+                            / (Double.parseDouble(Integer.toString(totalCicles * timeSlice))));
+            if (throughPutPerCicle.equals("NaN")) {
+                throughPutPerCicle = "-";
+            }
+            if (throughPutPerTime.equals("NaN")) {
+                throughPutPerTime = "-";
+            }
 
             longTermScheduler.displaySubmissionQueue();
             shortTermScheduler.displayProcessesQueues();
@@ -125,6 +138,10 @@ public class UserInterface extends Thread implements NotificationInterface {
                 statistics = statistics + "\nAproveitamento de CPU: "
                         + "-";
             }
+            statistics = statistics + "\nVazao: "
+                    + throughPutPerTime
+                    + " processos/seg ("
+                    + throughPutPerCicle + " processos/ciclo)";
             displayStatistics(statistics);
 
         }
