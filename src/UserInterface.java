@@ -1,51 +1,265 @@
-import java.util.Scanner;
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
+/**
+ * Interface gráfica de usuário permite interação com o programa, e visualização
+ * das mecânicas internas do programa
+ * 
+ * @author Guilherme Constantino
+ * @author Gabriela Pereira
+ */
 public class UserInterface extends Thread implements NotificationInterface {
-    String[] notifications;
-    private static UserInterface userInterface;
-    Scanner scanner = new Scanner(System.in);
-    String userInput = "0";
-    ShortTermScheduler shortTermScheduler = ShortTermScheduler.getShortTermScheduler();
+    private static UserInterface userInterface; // instância da classe para implementação do singleton
+
+    private ShortTermScheduler shortTermScheduler; // instância do escalonador de longo prazo
+    private LongTermScheduler longTermScheduler; // instância do escalonador de curto prazo
+
+    // as variaveis de elementos da interface são instanciadas aqui ao invés de
+    // dentro do startUI
+    // para que se possa modificar
+    // elas durante a execução do código
+    private JFrame frame = new JFrame("Simulador de escalonamento"); // janela da interface
+    private JPanel mainPanel = new JPanel(new GridBagLayout()); // painel onde serão inseridos os elementos da interface
+    private JPanel sidebarPanel = new JPanel(); // painel que contém os botões
+    private JTextArea notificationsDisplay = new JTextArea(15, 30); // area para exibir as notificacões
+    private JTextArea longQueueDisplay = new JTextArea(15, 30); // area para exibir a fila de longo prazo
+    private JTextArea shortQueueDisplay = new JTextArea(15, 30); // area para exibir a fila de curto prazo
+    private JTextArea statisticsDisplay = new JTextArea(15, 30); // area para exibir as estatisticas
+    private JButton addButton = new JButton("Adicionar processo"); // botão para adicionar processos
+    private JButton startButton = new JButton("Iniciar simulacao"); // botão para iniciar a simulação
+    private JButton suspendButton = new JButton("Suspender simulacao"); // botão para suspender a simulação
+    private JButton continueButton = new JButton("Continuar simulacao"); // botão para continuar a simulação
+    private JButton stopButton = new JButton("Encerrar simulacao"); // botão para encerrar a simulação
+    private JScrollPane notificationsPanel = new JScrollPane(notificationsDisplay); // painel de rolagem das
+                                                                                    // notificações
+    private JScrollPane shortQueuePanel = new JScrollPane(shortQueueDisplay); // painel de rolagem da fila de curto
+                                                                              // prazo
+    private JScrollPane longQueuePanel = new JScrollPane(longQueueDisplay); // painel de rolagem da fila de longo prazo
+    private JScrollPane statisticsPanel = new JScrollPane(statisticsDisplay); // painel de rolagem da exibição de
+                                                                              // estatísticas
 
     private UserInterface() {
-
     }
 
-    /// padrão de design singleton garante que haja apenas uma instância desta
-    /// classe
+    /**
+     * @return UserInterface
+     */
     public static UserInterface getUserInterface() {
         if (userInterface == null) {
-            return new UserInterface();
-        } else {
-            return userInterface;
+            userInterface = new UserInterface();
         }
+        return userInterface;
+    }
+
+    public void run() {
+
+        startUI();
+
+        while (true) {
+            try {
+                Thread.sleep(shortTermScheduler.getTimeSlice() / 2); // espera para poupar loops excessivos
+            } catch (InterruptedException e) {
+
+                e.printStackTrace();
+            }
+            longTermScheduler.displaySubmissionQueue();
+            shortTermScheduler.displayProcessesQueues();
+
+        }
+        // shutdown();
     }
 
     @Override
     public void display(String text) {
-        System.out.println(text);
+
+        notificationsDisplay.append(text + "\n");
+        notificationsDisplay.setCaretPosition(notificationsDisplay.getDocument().getLength());
 
     }
 
-    public void run() {
-        while (!userInput.equals("6")) {
-            System.out.println("Menu de comandos (digite o numero para executar)"); // TODO: colocar condicionais para o
-                                                                                    // que aparece ou não
-            System.out.println("1 - adicionar processo");
-            System.out.println("2 - iniciar simulacao");
-            System.out.println("3 - suspender simulacao");
-            System.out.println("4 - continuar simulacao");
-            System.out.println("5 - encerrar simulacao");
-            System.out.println("6 - fechar simulador");
-            userInput = scanner.nextLine();
-            if (userInput.equals("1")) {
+    public void displayLongQueue(String text) {
 
-                userInput = scanner.nextLine();
-                Process process = new Process(userInput, new String[] { "execute", "execute" });
-                shortTermScheduler.addProcess(process);
-                display("Nova fila de processos: " + shortTermScheduler.getProcessQueue());
+        longQueueDisplay.setText(text);
+        longQueueDisplay.setCaretPosition(longQueueDisplay.getDocument().getLength());
+
+    }
+
+    public void displayShortQueue(String text) {
+
+        shortQueueDisplay.setText(text);
+        shortQueueDisplay.setCaretPosition(shortQueueDisplay.getDocument().getLength());
+
+    }
+
+    public void shutdown() {
+        shortTermScheduler.shutDown();
+        longTermScheduler.shutDown();
+        frame.dispose();
+
+    }
+
+    private void startUI() {
+        // configurações de elementos da interface
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        GridBagConstraints constraints = new GridBagConstraints();
+
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.weightx = 1.0;
+        constraints.weighty = 1.0;
+
+        sidebarPanel.setLayout(new BoxLayout(sidebarPanel, BoxLayout.Y_AXIS));
+        sidebarPanel.setBorder(BorderFactory.createTitledBorder("Acoes"));
+
+        addButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                searchTxtFile();
+            }
+        });
+
+        startButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                shortTermScheduler.startSimulation();
+            }
+        });
+
+        suspendButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                shortTermScheduler.suspendSimulation();
+            }
+        });
+
+        continueButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                shortTermScheduler.resumeSimulation();
+            }
+        });
+
+        stopButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                shortTermScheduler.stopSimulation();
+            }
+        });
+
+        sidebarPanel.add(addButton);
+        sidebarPanel.add(startButton);
+        sidebarPanel.add(suspendButton);
+        sidebarPanel.add(continueButton);
+        sidebarPanel.add(stopButton);
+
+        notificationsDisplay.setEditable(false);
+
+        notificationsPanel.setBorder(BorderFactory.createTitledBorder("Notificacoes"));
+
+        longQueueDisplay.setEditable(false);
+
+        longQueuePanel.setBorder(BorderFactory.createTitledBorder("Escalonador de longo prazo"));
+
+        shortQueueDisplay.setEditable(false);
+
+        shortQueuePanel.setBorder(BorderFactory.createTitledBorder("Escalonador de curto prazo"));
+
+        statisticsDisplay.setEditable(false);
+
+        statisticsPanel.setBorder(BorderFactory.createTitledBorder("Estatisticas"));
+
+        // Configura posicoes de cada painel
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        mainPanel.add(sidebarPanel, constraints);
+
+        constraints.gridx = 1;
+        constraints.gridy = 0;
+        mainPanel.add(notificationsPanel, constraints);
+
+        constraints.gridx = 2;
+        constraints.gridy = 0;
+        mainPanel.add(longQueuePanel, constraints);
+
+        constraints.gridx = 2;
+        constraints.gridy = 1;
+        mainPanel.add(shortQueuePanel, constraints);
+
+        constraints.gridx = 1;
+        constraints.gridy = 1;
+        mainPanel.add(statisticsPanel, constraints);
+
+        frame.add(mainPanel);
+
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+
+    /**
+     * Método para a seleção de arquivos de texto através do explorador nativo do
+     * sistema.
+     * Após selecionados, os arquivos são lidos e enviados para o escalonador de
+     * longo prazo.
+     * 
+     * @author Guilherme Constantino
+     */
+    private void searchTxtFile() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setMultiSelectionEnabled(true);
+
+        int result = fileChooser.showOpenDialog(null);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+
+            File[] selectedFiles = fileChooser.getSelectedFiles();
+
+            for (int i = 0; i < selectedFiles.length; i++) {
+                File file = selectedFiles[i];
+                try {
+                    String fileContent = fileReader(file);
+
+                    longTermScheduler.submitJob(fileContent);
+                } catch (IOException ioe) {
+                    ioe.printStackTrace();
+                }
             }
         }
     }
 
+    /**
+     * Método para a leitura de conteúdo do arquivo
+     * 
+     * @param file arquivo de texto a ser lido
+     * @return retorna uma String com o conteúdo do arquivo
+     * @author Guilherme Constantino
+     */
+    private static String fileReader(File file) throws IOException {
+        StringBuilder content = new StringBuilder();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append("\n");
+            }
+        }
+
+        return content.toString();
+    }
+
+    public void setShortTermScheduler(ShortTermScheduler shortTermScheduler) {
+        this.shortTermScheduler = shortTermScheduler;
+    }
+
+    public void setLongTermScheduler(LongTermScheduler longTermScheduler) {
+        this.longTermScheduler = longTermScheduler;
+    }
 }
