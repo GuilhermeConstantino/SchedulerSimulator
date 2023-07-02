@@ -1,3 +1,4 @@
+
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -6,6 +7,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -20,13 +22,14 @@ import java.io.IOException;
  * das mecânicas internas do programa
  * 
  * @author Guilherme Constantino
- * @author Gabriela Pereira
  */
 public class UserInterface extends Thread implements NotificationInterface {
     private static UserInterface userInterface; // instância da classe para implementação do singleton
 
     private ShortTermScheduler shortTermScheduler; // instância do escalonador de longo prazo
     private LongTermScheduler longTermScheduler; // instância do escalonador de curto prazo
+
+    String statistics = ""; // armazena o corpo de texto com as estatisticas
 
     // as variaveis de elementos da interface são instanciadas aqui ao invés de
     // dentro do startUI
@@ -56,6 +59,8 @@ public class UserInterface extends Thread implements NotificationInterface {
     }
 
     /**
+     * Metodo para a obtencao da instancia unica de UserInterface
+     * 
      * @return UserInterface
      */
     public static UserInterface getUserInterface() {
@@ -78,13 +83,16 @@ public class UserInterface extends Thread implements NotificationInterface {
             }
             longTermScheduler.displaySubmissionQueue();
             shortTermScheduler.displayProcessesQueues();
+            statistics = "Estado: " + shortTermScheduler.getStatus();
+            statistics = statistics + "\nCiclos totais: " + shortTermScheduler.getTotalCicles();
+
+            displayStatistics(statistics);
 
         }
-        // shutdown();
     }
 
     @Override
-    public void display(String text) {
+    public void displayNotification(String text) {
 
         notificationsDisplay.append(text + "\n");
         notificationsDisplay.setCaretPosition(notificationsDisplay.getDocument().getLength());
@@ -102,6 +110,13 @@ public class UserInterface extends Thread implements NotificationInterface {
 
         shortQueueDisplay.setText(text);
         shortQueueDisplay.setCaretPosition(shortQueueDisplay.getDocument().getLength());
+
+    }
+
+    public void displayStatistics(String text) {
+
+        statisticsDisplay.setText(text);
+        statisticsDisplay.setCaretPosition(statisticsDisplay.getDocument().getLength());
 
     }
 

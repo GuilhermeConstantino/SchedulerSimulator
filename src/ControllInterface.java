@@ -1,3 +1,6 @@
+/**
+ * Interface de controle da simulacao
+ */
 public interface ControllInterface {
     public void startSimulation();
 

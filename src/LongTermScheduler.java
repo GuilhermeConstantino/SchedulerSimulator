@@ -1,8 +1,15 @@
+
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Classe simula o escalonador de longo prazo
+ * 
+ * @author Raphael Morraye
+ * @author Guilherme Constantino
+ */
 public class LongTermScheduler extends Thread implements SubmissionInterface {
-    // variavel
+
     private List<Process> processQueue = new ArrayList<>();
     private UserInterface userInterface = UserInterface.getUserInterface();
     private ShortTermScheduler shortTermScheduler = ShortTermScheduler.getShortTermScheduler();
@@ -18,6 +25,12 @@ public class LongTermScheduler extends Thread implements SubmissionInterface {
     private LongTermScheduler() {
     }
 
+    /**
+     * Execucao do escalonador de longo prazo
+     * 
+     * @author Raphael Morraye
+     * @author Guilherme Constantino
+     */
     public void run() {
 
         while (status != "shutdown") {
@@ -27,16 +40,92 @@ public class LongTermScheduler extends Thread implements SubmissionInterface {
 
                 e.printStackTrace();
             }
-            if (shortTermScheduler.status == "running") {
+            if (shortTermScheduler.status.equals("running")) {
                 if (shortTermScheduler.getProcessLoad() < shortTermScheduler.getMaxProcessLoad()
                         && !processQueue.isEmpty()) {
                     Process sendProcess = processQueue.remove(0);
                     shortTermScheduler.addProcess(sendProcess);
-                    userInterface.display("Processo " + sendProcess.getFileName() + " aceito");
+                    userInterface.displayNotification("Processo " + sendProcess.getFileName() + " aceito");
                 }
             }
         }
     }
+
+    /**
+     * Transforma uma String em process e a envia para a fila do escalonador de
+     * longo prazo
+     * 
+     * @author Raphael Morraye
+     * @author Guilherme Constantino
+     */
+    @Override
+    public boolean submitJob(String job) {
+        String fileName;
+        int priority;
+        List<BehaviourStatement> instructions = new ArrayList<>();
+
+        String[] parts = job.split("\n");
+
+        String[] firstLine = parts[0].split(" ");
+
+        priority = Integer.parseInt(firstLine[2].substring(0, 1)); // usando substring pois outras funcoes não retornam
+                                                                   // string
+        fileName = firstLine[1];
+        for (int i = 2; i < parts.length - 1; i++) {
+
+            BehaviourStatement behaviour;
+
+            if (parts[i].substring(0, 5).equals("execu")) {
+
+                behaviour = new BehaviourStatement("execute");
+            } else {
+
+                behaviour = new BehaviourStatement("block",
+                        Integer.parseInt(parts[i].substring(6, 7)));
+            }
+
+            instructions.add(behaviour); // getting instructions (begin ... end)
+        }
+
+        Process newProcess = new Process(fileName, instructions, priority);
+        // for (int i = 0; i < instructions.size(); i++) {
+        // userInterface.display(instructions.get(i).getCommand());
+        // }
+        long submitionTime = System.currentTimeMillis();
+        newProcess.setProcessSubmitionTime(submitionTime);
+        processQueue.add(newProcess);
+        return true;
+    }
+
+    /**
+     * Exibe a fila de submissao
+     * 
+     * @author Raphael Morraye
+     */
+    @Override
+    public void displaySubmissionQueue() {
+
+        String queueDescription = "";
+
+        for (int i = 0; i < processQueue.size(); i++) {
+
+            queueDescription = queueDescription + "[" + i + "] " + processQueue.get(i).getFileName() + "\n";
+
+        }
+
+        userInterface.displayLongQueue(queueDescription);
+    }
+
+    /**
+     * Sinaliza o encerramento do simulador
+     * 
+     * @author Guilherme Constantino
+     */
+    public void shutDown() {
+        status = "shutdown";
+    }
+
+    // Getters e setters
 
     public List<Process> getProcessQueue() {
         return processQueue;
@@ -80,66 +169,6 @@ public class LongTermScheduler extends Thread implements SubmissionInterface {
         }
         return longTermScheduler;
 
-    }
-
-    @Override
-    public boolean submitJob(String job) {
-        String fileName;
-        int priority;
-        List<BehaviourStatement> instructions = new ArrayList<>();
-
-        String[] parts = job.split("\n");
-
-        String[] firstLine = parts[0].split(" ");
-
-        priority = Integer.parseInt(firstLine[2].substring(0, 1)); // usando substring pois outras funcoes não retornam
-                                                                   // string
-        fileName = firstLine[1];
-        for (int i = 2; i < parts.length - 1; i++) {
-
-            BehaviourStatement behaviour;
-
-            if (parts[i].substring(0, 5).equals("execu")) {
-
-                behaviour = new BehaviourStatement("execute");
-            } else {
-
-                behaviour = new BehaviourStatement("block",
-                        Integer.parseInt(parts[i].substring(6, 7)));
-            }
-
-            instructions.add(behaviour); // getting instructions (begin ... end)
-        }
-
-        Process newProcess = new Process(fileName, instructions, priority);
-        // for (int i = 0; i < instructions.size(); i++) {
-        // userInterface.display(instructions.get(i).getCommand());
-        // }
-        long submitionTime = System.currentTimeMillis();
-        newProcess.setProcessSubmitionTime(submitionTime);
-        processQueue.add(newProcess);
-        return true;
-    }
-
-    /**
-     * @author Raphael Morraye
-     */
-    @Override
-    public void displaySubmissionQueue() {
-
-        String queueDescription = "";
-
-        for (int i = 0; i < processQueue.size(); i++) {
-
-            queueDescription = queueDescription + "[" + i + "] " + processQueue.get(i).getFileName() + "\n";
-
-        }
-
-        userInterface.displayLongQueue(queueDescription);
-    }
-
-    public void shutDown() {
-        status = "shutdown";
     }
 
 }

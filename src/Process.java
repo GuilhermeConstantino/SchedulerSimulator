@@ -1,4 +1,3 @@
-// classe que interpreta os arquivos contendo programas simulados
 
 import java.util.List;
 

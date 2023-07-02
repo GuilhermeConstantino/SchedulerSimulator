@@ -1,6 +1,6 @@
 
 /**
- * Classo que simula uma instrução do programa simulado.
+ * Classo que simula uma instrucao do programa simulado.
  * 
  * 
  * @author Guilherme Constantino
@@ -10,8 +10,8 @@ public class BehaviourStatement {
     int blockPeriod;
 
     /**
-     * Este construtor apenas aceita block como comando, pois um execute não tem
-     * período de bloqueio.
+     * Este construtor apenas aceita block como comando, pois um execute nao tem
+     * periodo de bloqueio.
      * 
      * @author Guilherme Constantino
      * @param command     Comando de bloqueio
@@ -29,7 +29,7 @@ public class BehaviourStatement {
 
     /**
      * Este construtor apenas aceita execute como comando, pois um block necessita
-     * de um período de bloqueio
+     * de um periodo de bloqueio
      * 
      * @author Guilherme Constantino
      * @param command Comando de execute
@@ -39,16 +39,5 @@ public class BehaviourStatement {
             throw new IllegalArgumentException("Comando invalido: apenas comandos de 'execute' para este construtor");
         }
         this.command = command;
-    }
-
-    // Getters
-    // Esta classe não possui setters, visto que em nosso programa não há caso de
-    // uso para os mesmos
-    public String getCommand() {
-        return command;
-    }
-
-    public int getBlockPeriod() {
-        return blockPeriod;
     }
 }

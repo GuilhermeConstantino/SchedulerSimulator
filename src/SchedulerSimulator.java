@@ -2,7 +2,7 @@
 import javax.swing.JOptionPane;
 
 /**
- * Método main para a inicialização do programa e definição de variáveis
+ * Metodo main para a inicializacao do programa e definicao de variaveis
  * 
  * @author Guilherme Constantino
  * @author Gabriela Pereira
@@ -46,8 +46,7 @@ public class SchedulerSimulator {
                 continue;
             }
             if (maxProcessLoad > 0) {
-                message.append("Valor inserido");
-                JOptionPane.showMessageDialog(null, message, "Sucesso", JOptionPane.YES_OPTION);
+
                 userStage = 1;
 
             } else {
@@ -70,8 +69,6 @@ public class SchedulerSimulator {
                 continue;
             }
             if (timeSlice > 0) {
-                message.append("Valor inserido");
-                JOptionPane.showMessageDialog(null, message, "Sucesso", JOptionPane.YES_OPTION);
                 userStage = 2;
 
             } else {
