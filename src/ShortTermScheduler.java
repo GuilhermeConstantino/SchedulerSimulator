@@ -15,20 +15,17 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
     private LongTermScheduler longTermScheduler; // instância do escalonador
 
     // de longo prazo
-    String status = "uninitialized"; // sinalizador inicio, pausa, continuação ou encerramento
-    private static ShortTermScheduler shortTermScheduler; // instância do escalonador de curto prazo
-    private int timeSlice = -1; // fatia de tempo do escalonador, valores negativos indicam que ainda não foi
+    String status = "uninitialized"; // sinalizador inicio, pausa, continuacao ou encerramento
+    private static ShortTermScheduler shortTermScheduler; // instancia do escalonador de curto prazo
+    private int timeSlice = -1; // fatia de tempo do escalonador, valores negativos indicam que ainda nao foi
                                 // inicializado
     private int totalCicles = 0; // contador de ciclos totais
     private int executionCicles = 0; // contador de operacoes de execute
-
-    public int getExecutionCicles() {
-        return executionCicles;
-    }
+    private int concludedProcesses = 0; // contador de processos concluidos
 
     private String selectedAlgorithm = "";
-    boolean preempt = false; // variavel que sinaliza a preempção do processo
-    Process executingProcess;
+    private boolean preempt = false; // variavel que sinaliza a preempcao do processo
+    private Process executingProcess; // variavel que armazena o processo em execucao
 
     private int maxProcessLoad = -1; // carga máxima de processos, valores negativos indicam que ainda não foi
                                      // estabelecida
@@ -65,12 +62,11 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
             }
 
             while (status.equals("running")) {
-
                 if (readyProcesses.isEmpty()) { // verifica se há processos a serem executados
                     if (blockedProcesses.isEmpty()) { // verifica se há processos bloqueados em espera
                         if (longTermScheduler.getProcessQueue().isEmpty()) { // verifica se há processos submetidos mas
                                                                              // ainda não admitidos
-                            userInterface.displayNotification("Fila de processos vazia, encerrando simulacao.");
+                            userInterface.displayNotification("Fila de processos vazia");
                             stopSimulation(); // encerra a simulação
                         } else {
                             continue; // reinicia o loop para aguardar os novos processos
@@ -132,6 +128,7 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
 
                         } else { // caso o próximo comando não seja execute ou block, entende-se que o processo
                                  // chegou ao fim
+                            concludedProcesses++;
                             executingProcess = null;
                             preempt = true;
                         }
@@ -370,6 +367,14 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
 
     public void setLongTermScheduler(LongTermScheduler longTermScheduler) {
         this.longTermScheduler = longTermScheduler;
+    }
+
+    public int getTotalConcludedProcesses() {
+        return concludedProcesses;
+    }
+
+    public int getExecutionCicles() {
+        return executionCicles;
     }
 
 }

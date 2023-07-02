@@ -74,6 +74,10 @@ public class UserInterface extends Thread implements NotificationInterface {
         int totalCicles;
         int timeSlice = shortTermScheduler.getTimeSlice();
         int executeCicles;
+        int totalConcludedProcesses;
+        String simulatedTime;
+        String cpuSimulationTime;
+        String cpuUsage;
 
         startUI();
 
@@ -84,26 +88,38 @@ public class UserInterface extends Thread implements NotificationInterface {
 
                 e.printStackTrace();
             }
-            longTermScheduler.displaySubmissionQueue();
-            shortTermScheduler.displayProcessesQueues();
-            statistics = "Simulacao: " + shortTermScheduler.getTranslatedStatus();
 
             totalCicles = shortTermScheduler.getTotalCicles();
             executeCicles = shortTermScheduler.getExecutionCicles();
             timeSlice = shortTermScheduler.getTimeSlice();
+            totalConcludedProcesses = shortTermScheduler.getTotalConcludedProcesses();
+            simulatedTime = String.format("%.3f",
+                    (Double.parseDouble(Integer.toString(totalCicles * timeSlice)) / 1000));
+            cpuSimulationTime = String.format("%.3f",
+                    (Double.parseDouble(Integer.toString(executeCicles * timeSlice)) / 1000));
+            cpuUsage = String.format("%.2f", Double.parseDouble(Integer.toString(executeCicles))
+                    / Double.parseDouble(Integer.toString(totalCicles)) * 100);
+
+            longTermScheduler.displaySubmissionQueue();
+            shortTermScheduler.displayProcessesQueues();
+
+            statistics = "Simulacao: " + shortTermScheduler.getTranslatedStatus();
 
             statistics = statistics + "\nTempo simulado decorrido: "
-                    + String.format("%.3f", (Double.parseDouble(Integer.toString(totalCicles * timeSlice)) / 1000))
+                    + simulatedTime
                     + " seg ("
                     + totalCicles + " ciclos)";
+            statistics = statistics + "\nProcessos concluidos: " + totalConcludedProcesses;
+            statistics = statistics + "\nVazao: " + totalConcludedProcesses;
+
             statistics = statistics + "\nUso da CPU simulado: "
-                    + String.format("%.3f", (Double.parseDouble(Integer.toString(executeCicles * timeSlice)) / 1000))
+                    + cpuSimulationTime
                     + " seg ("
                     + executeCicles + " ciclos)";
             if (totalCicles != 0) {
+
                 statistics = statistics + "\nAproveitamento de CPU: "
-                        + String.format("%.2f", Double.parseDouble(Integer.toString(executeCicles))
-                                / Double.parseDouble(Integer.toString(totalCicles)) * 100)
+                        + cpuUsage
                         + "%";
             } else {
                 statistics = statistics + "\nAproveitamento de CPU: "
@@ -150,14 +166,18 @@ public class UserInterface extends Thread implements NotificationInterface {
 
     }
 
+    /**
+     * Configura os elementos que compoem a interface de usuario
+     */
     private void startUI() {
-        // configurações de elementos da interface
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        GridBagConstraints constraints = new GridBagConstraints();
 
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.weightx = 1.0;
-        constraints.weighty = 1.0;
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // especifica que a aplicacao deve ser encerrada quando a
+                                                              // janela for fechada
+        GridBagConstraints constraints = new GridBagConstraints(); // coordenadas serão usadas para posicionar os
+                                                                   // paineis
+
+        constraints.fill = GridBagConstraints.BOTH; // faz com que o painel preencha toda area que ocupa para se
+                                                    // posicionar melhor
 
         sidebarPanel.setLayout(new BoxLayout(sidebarPanel, BoxLayout.Y_AXIS));
         sidebarPanel.setBorder(BorderFactory.createTitledBorder("Acoes"));
