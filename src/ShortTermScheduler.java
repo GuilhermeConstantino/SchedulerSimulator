@@ -129,6 +129,8 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
                         } else { // caso o próximo comando não seja execute ou block, entende-se que o processo
                                  // chegou ao fim
                             concludedProcesses++;
+                            userInterface.displayNotification(
+                                    "Processo " + executingProcess.getFileName() + " terminado");
                             executingProcess = null;
                             preempt = true;
                         }

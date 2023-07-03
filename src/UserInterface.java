@@ -75,6 +75,7 @@ public class UserInterface extends Thread implements NotificationInterface {
         int timeSlice = shortTermScheduler.getTimeSlice();
         int executeCicles;
         int totalConcludedProcesses;
+        int totalSubmittedProcesses;
         String simulatedTime;
         String cpuSimulationTime;
         String cpuUsage;
@@ -95,6 +96,7 @@ public class UserInterface extends Thread implements NotificationInterface {
             executeCicles = shortTermScheduler.getExecutionCicles();
             timeSlice = shortTermScheduler.getTimeSlice();
             totalConcludedProcesses = shortTermScheduler.getTotalConcludedProcesses();
+            totalSubmittedProcesses = longTermScheduler.getTotalSubmittedProcesses();
             simulatedTime = String.format("%.3f",
                     (Double.parseDouble(Integer.toString(totalCicles * timeSlice)) / 1000));
             cpuSimulationTime = String.format("%.3f",
@@ -103,9 +105,13 @@ public class UserInterface extends Thread implements NotificationInterface {
                     / Double.parseDouble(Integer.toString(totalCicles)) * 100);
             throughPutPerCicle = String.format("%.2f",
                     totalConcludedProcesses / (Double.parseDouble(Integer.toString(totalCicles))));
-            throughPutPerTime = String.format("%.2f",
-                    Double.parseDouble(Integer.toString(totalConcludedProcesses))
-                            / (Double.parseDouble(Integer.toString(totalCicles * timeSlice))));
+            if (simulatedTime != "0,000") {
+                throughPutPerTime = String.format("%.2f",
+                        Double.parseDouble(Integer.toString(totalConcludedProcesses))
+                                / (Double.parseDouble(Integer.toString(totalCicles * timeSlice)) / 1000));
+            } else {
+                throughPutPerTime = "0,00";
+            }
             if (throughPutPerCicle.equals("NaN")) {
                 throughPutPerCicle = "-";
             }
@@ -115,15 +121,14 @@ public class UserInterface extends Thread implements NotificationInterface {
 
             longTermScheduler.displaySubmissionQueue();
             shortTermScheduler.displayProcessesQueues();
-
             statistics = "Simulacao: " + shortTermScheduler.getTranslatedStatus();
 
             statistics = statistics + "\nTempo simulado decorrido: "
                     + simulatedTime
                     + " seg ("
                     + totalCicles + " ciclos)";
-            statistics = statistics + "\nProcessos concluidos: " + totalConcludedProcesses;
-            statistics = statistics + "\nVazao: " + totalConcludedProcesses;
+            statistics = statistics + "\nProcessos concluidos: " + totalConcludedProcesses + " de "
+                    + totalSubmittedProcesses;
 
             statistics = statistics + "\nUso da CPU simulado: "
                     + cpuSimulationTime

@@ -15,6 +15,7 @@ public class LongTermScheduler extends Thread implements SubmissionInterface {
     private ShortTermScheduler shortTermScheduler = ShortTermScheduler.getShortTermScheduler();
     private static LongTermScheduler longTermScheduler;
     private String status = "dormant";
+    private int totalSubmittedProcesses = 0;
 
     /**
      * Construtor privado para forcar o uso do getLongTermScheduler
@@ -94,6 +95,7 @@ public class LongTermScheduler extends Thread implements SubmissionInterface {
         long submitionTime = System.currentTimeMillis();
         newProcess.setProcessSubmitionTime(submitionTime);
         processQueue.add(newProcess);
+        totalSubmittedProcesses++;
         return true;
     }
 
@@ -169,6 +171,10 @@ public class LongTermScheduler extends Thread implements SubmissionInterface {
         }
         return longTermScheduler;
 
+    }
+
+    public int getTotalSubmittedProcesses() {
+        return totalSubmittedProcesses;
     }
 
 }
