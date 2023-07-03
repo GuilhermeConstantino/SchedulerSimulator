@@ -131,6 +131,10 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
                             concludedProcesses++;
                             userInterface.displayNotification(
                                     "Processo " + executingProcess.getFileName() + " terminado");
+
+                            executingProcess.setCiclesOnTermination(totalCicles);
+                            executingProcess.setTurnaround();
+                            userInterface.addConcludedProcessData(executingProcess);
                             executingProcess = null;
                             preempt = true;
                         }

@@ -3,7 +3,7 @@ import java.util.List;
 
 /**
  * Classe que armazena os processos simulados, contém seus dados e os meios de
- * acessá-los.
+ * acessa-los.
  * 
  * @author Guilherme Constantion
  */
@@ -11,8 +11,9 @@ public class Process {
     private String fileName; // nome do arquivo do processo
     private List<BehaviourStatement> programBehaviour; // lista de instruções do processo
     private int processPriority; // prioridade do processo
-    private long processSubmitionTime;
-    private long processTerminationTime;
+    private int ciclesOnSubmition = 0;// quantidade de ciclos totais no momento em que o processo foi submetido
+    private int ciclesOnTermination = 0;// quantidade de ciclos totais no momento em que o processo foi terminado
+    private int turnaround;// numero de ciclos total que levou desde a submissao ate o termino do processo
 
     /**
      * Método construtor do processo
@@ -45,21 +46,6 @@ public class Process {
     }
 
     // Abaixo getters e setters
-    public long getProcessSubmitionTime() {
-        return processSubmitionTime;
-    }
-
-    public void setProcessSubmitionTime(long processSubmitTime) {
-        this.processSubmitionTime = processSubmitTime;
-    }
-
-    public long getProcessTerminationTime() {
-        return processTerminationTime;
-    }
-
-    public void setProcessTerminationTime(long processTerminationTime) {
-        this.processTerminationTime = processTerminationTime;
-    }
 
     public int getCiclesOnSubmition() {
         return ciclesOnSubmition;
@@ -76,9 +62,6 @@ public class Process {
     public void setCiclesOnTermination(int ciclesOnTermination) {
         this.ciclesOnTermination = ciclesOnTermination;
     }
-
-    private int ciclesOnSubmition;
-    private int ciclesOnTermination;
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
@@ -110,6 +93,14 @@ public class Process {
         } else {
             return programBehaviour.get(i);
         }
+    }
+
+    public long getTurnaround() {
+        return turnaround;
+    }
+
+    public void setTurnaround() {
+        this.turnaround = this.ciclesOnTermination - this.ciclesOnSubmition;
     }
 
 }

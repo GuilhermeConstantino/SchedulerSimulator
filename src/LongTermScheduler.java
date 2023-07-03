@@ -92,8 +92,9 @@ public class LongTermScheduler extends Thread implements SubmissionInterface {
         // for (int i = 0; i < instructions.size(); i++) {
         // userInterface.display(instructions.get(i).getCommand());
         // }
-        long submitionTime = System.currentTimeMillis();
-        newProcess.setProcessSubmitionTime(submitionTime);
+        int submitionCicles = shortTermScheduler.getTotalCicles();
+        newProcess.setCiclesOnSubmition(submitionCicles);
+
         processQueue.add(newProcess);
         totalSubmittedProcesses++;
         return true;

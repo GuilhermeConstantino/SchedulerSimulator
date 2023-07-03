@@ -30,6 +30,7 @@ public class UserInterface extends Thread implements NotificationInterface {
     private LongTermScheduler longTermScheduler; // instância do escalonador de curto prazo
 
     String statistics = ""; // armazena o corpo de texto com as estatisticas
+    private String concludedProcessesData = "";
 
     // as variaveis de elementos da interface são instanciadas aqui ao invés de
     // dentro do startUI
@@ -147,6 +148,10 @@ public class UserInterface extends Thread implements NotificationInterface {
                     + throughPutPerTime
                     + " processos/seg ("
                     + throughPutPerCicle + " processos/ciclo)";
+
+            if (shortTermScheduler.status == "finished") {
+                statistics += concludedProcessesData;
+            }
             displayStatistics(statistics);
 
         }
@@ -333,6 +338,11 @@ public class UserInterface extends Thread implements NotificationInterface {
         }
 
         return content.toString();
+    }
+
+    public void addConcludedProcessData(Process concludedProcess) {
+        concludedProcessesData += "\n" + "Processo " + concludedProcess.getFileName();
+        concludedProcessesData += "\n" + "Tempo de retorno " + concludedProcess.getTurnaround();
     }
 
     public void setShortTermScheduler(ShortTermScheduler shortTermScheduler) {
