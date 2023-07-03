@@ -8,6 +8,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -21,6 +22,7 @@ import java.io.IOException;
  * Interface gráfica de usuário permite interação com o programa, e visualização
  * das mecânicas internas do programa
  * 
+ * @author Gabriela Pereira
  * @author Guilherme Constantino
  */
 public class UserInterface extends Thread implements NotificationInterface {
@@ -30,7 +32,8 @@ public class UserInterface extends Thread implements NotificationInterface {
     private LongTermScheduler longTermScheduler; // instância do escalonador de curto prazo
 
     String statistics = ""; // armazena o corpo de texto com as estatisticas
-    private String concludedProcessesData = "";
+    private String concludedProcessesData = ""; // dados de processos concluidos
+    private int totalConcludedReturnCicles = 0; // quantidade de ciclos gasta por todos os processo concluidos
 
     // as variaveis de elementos da interface são instanciadas aqui ao invés de
     // dentro do startUI
@@ -82,10 +85,11 @@ public class UserInterface extends Thread implements NotificationInterface {
         String cpuUsage;
         String throughPutPerCicle;
         String throughPutPerTime;
+        boolean end = false;
 
         startUI();
 
-        while (true) {
+        while (!end) {
             try {
                 Thread.sleep(timeSlice / 2); // espera para poupar loops excessivos
             } catch (InterruptedException e) {
@@ -114,10 +118,10 @@ public class UserInterface extends Thread implements NotificationInterface {
                 throughPutPerTime = "0,00";
             }
             if (throughPutPerCicle.equals("NaN")) {
-                throughPutPerCicle = "-";
+                throughPutPerCicle = "0,00";
             }
             if (throughPutPerTime.equals("NaN")) {
-                throughPutPerTime = "-";
+                throughPutPerTime = "0,00";
             }
 
             longTermScheduler.displaySubmissionQueue();
@@ -142,15 +146,30 @@ public class UserInterface extends Thread implements NotificationInterface {
                         + "%";
             } else {
                 statistics = statistics + "\nAproveitamento de CPU: "
-                        + "-";
+                        + "0,00";
             }
             statistics = statistics + "\nVazao: "
                     + throughPutPerTime
                     + " processos/seg ("
                     + throughPutPerCicle + " processos/ciclo)";
 
-            if (shortTermScheduler.status == "finished") {
+            if (shortTermScheduler.status.equals("finished")) {
+                Double ciclesPerProcess = Double.parseDouble(Integer.toString(totalConcludedReturnCicles))
+                        / Double.parseDouble(Integer.toString(totalConcludedProcesses));
+                String avarageTime = String.format("%.2f", ciclesPerProcess * timeSlice / 1000);
+                String avarageCicles = String.format("%.2f", ciclesPerProcess);
+                if (avarageTime.equals("NaN")) {
+                    avarageTime = "0,00";
+                }
+                if (avarageCicles.equals("NaN")) {
+                    avarageCicles = "0,00";
+                }
+                statistics += "\nTempo de retorno medio: " + avarageTime
+                        + " segundos por processo\n("
+                        + avarageCicles + " ciclos por processo)";
+                statistics += "\n------------------";
                 statistics += concludedProcessesData;
+                end = true;
             }
             displayStatistics(statistics);
 
@@ -195,6 +214,9 @@ public class UserInterface extends Thread implements NotificationInterface {
 
     /**
      * Configura os elementos que compoem a interface de usuario
+     * 
+     * @author Gabriela Pereira
+     * @author Guilherme Constantino
      */
     private void startUI() {
 
@@ -206,12 +228,19 @@ public class UserInterface extends Thread implements NotificationInterface {
         constraints.fill = GridBagConstraints.BOTH; // faz com que o painel preencha toda area que ocupa para se
                                                     // posicionar melhor
 
+        constraints.weightx = 1.0;
+        constraints.weighty = 1.0;
+
         sidebarPanel.setLayout(new BoxLayout(sidebarPanel, BoxLayout.Y_AXIS));
         sidebarPanel.setBorder(BorderFactory.createTitledBorder("Acoes"));
 
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                searchTxtFile();
+                if (shortTermScheduler.getStatus() != "finished") {
+                    searchTxtFile();
+                } else {
+                    displayNotification("Erro: simulacao encerrada");
+                }
             }
         });
 
@@ -238,6 +267,15 @@ public class UserInterface extends Thread implements NotificationInterface {
                 shortTermScheduler.stopSimulation();
             }
         });
+
+        addButton.setPreferredSize(new Dimension(60, 20));
+        startButton.setPreferredSize(new Dimension(60, 20));
+        suspendButton.setPreferredSize(new Dimension(60, 20));
+        continueButton.setPreferredSize(new Dimension(60, 20));
+        stopButton.setPreferredSize(new Dimension(60, 20));
+
+        mainPanel.setPreferredSize(new Dimension(1280, 920)); // Define o tamanho do painel
+        sidebarPanel.setPreferredSize(new Dimension(10, 10));
 
         sidebarPanel.add(addButton);
         sidebarPanel.add(startButton);
@@ -341,8 +379,10 @@ public class UserInterface extends Thread implements NotificationInterface {
     }
 
     public void addConcludedProcessData(Process concludedProcess) {
-        concludedProcessesData += "\n" + "Processo " + concludedProcess.getFileName();
-        concludedProcessesData += "\n" + "Tempo de retorno " + concludedProcess.getTurnaround();
+
+        concludedProcessesData += "\n" + "- Tempo de retorno (" + concludedProcess.getFileName() + "): "
+                + concludedProcess.getTurnaround();
+        totalConcludedReturnCicles += concludedProcess.getTurnaround();
     }
 
     public void setShortTermScheduler(ShortTermScheduler shortTermScheduler) {

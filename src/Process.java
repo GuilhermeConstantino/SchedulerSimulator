@@ -95,7 +95,7 @@ public class Process {
         }
     }
 
-    public long getTurnaround() {
+    public int getTurnaround() {
         return turnaround;
     }
 
