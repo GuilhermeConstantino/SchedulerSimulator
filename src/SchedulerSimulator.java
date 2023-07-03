@@ -27,12 +27,6 @@ public class SchedulerSimulator {
         shortTermScheduler.setLongTermScheduler(longTermScheduler);
         StringBuilder message = new StringBuilder();
 
-        // debug
-        maxProcessLoad = 3;
-        timeSlice = 600;
-        userStage = 3;
-        shortTermScheduler.setSelectedAlgorithm("RR");
-        // end debug
         while (userStage == 0) {
             userInput = JOptionPane.showInputDialog("Passo 1: Digite a carga maxima de processos",
                     JOptionPane.YES_NO_CANCEL_OPTION);

@@ -97,19 +97,24 @@ public class UserInterface extends Thread implements NotificationInterface {
                 e.printStackTrace();
             }
 
-            totalCicles = shortTermScheduler.getTotalCicles();
-            executeCicles = shortTermScheduler.getExecutionCicles();
-            timeSlice = shortTermScheduler.getTimeSlice();
-            totalConcludedProcesses = shortTermScheduler.getTotalConcludedProcesses();
-            totalSubmittedProcesses = longTermScheduler.getTotalSubmittedProcesses();
+            totalCicles = shortTermScheduler.getTotalCicles(); // ciclos totais decorridos
+            executeCicles = shortTermScheduler.getExecutionCicles(); // ciclos de execucao totais decorridos
+            timeSlice = shortTermScheduler.getTimeSlice(); // fatia de tempo determinada pelo usuario
+            totalConcludedProcesses = shortTermScheduler.getTotalConcludedProcesses(); // quantidade de processos
+                                                                                       // concluidos
+            totalSubmittedProcesses = longTermScheduler.getTotalSubmittedProcesses(); // quantidade de processos
+                                                                                      // submetidos
             simulatedTime = String.format("%.3f",
-                    (Double.parseDouble(Integer.toString(totalCicles * timeSlice)) / 1000));
+                    (Double.parseDouble(Integer.toString(totalCicles * timeSlice)) / 1000)); // tempo total simulado
             cpuSimulationTime = String.format("%.3f",
-                    (Double.parseDouble(Integer.toString(executeCicles * timeSlice)) / 1000));
+                    (Double.parseDouble(Integer.toString(executeCicles * timeSlice)) / 1000)); // tempo simulado de uso
+                                                                                               // da CPU
             cpuUsage = String.format("%.2f", Double.parseDouble(Integer.toString(executeCicles))
-                    / Double.parseDouble(Integer.toString(totalCicles)) * 100);
+                    / Double.parseDouble(Integer.toString(totalCicles)) * 100); // tempo simulado de uso da CPU em
+                                                                                // ciclos
             throughPutPerCicle = String.format("%.2f",
-                    totalConcludedProcesses / (Double.parseDouble(Integer.toString(totalCicles))));
+                    totalConcludedProcesses / (Double.parseDouble(Integer.toString(totalCicles)))); // throughtput atual
+                                                                                                    // total
             if (simulatedTime != "0,000") {
                 throughPutPerTime = String.format("%.2f",
                         Double.parseDouble(Integer.toString(totalConcludedProcesses))
@@ -124,8 +129,9 @@ public class UserInterface extends Thread implements NotificationInterface {
                 throughPutPerTime = "0,00";
             }
 
-            longTermScheduler.displaySubmissionQueue();
-            shortTermScheduler.displayProcessesQueues();
+            longTermScheduler.displaySubmissionQueue(); // requisicao de exibicao da fila de submissao
+            shortTermScheduler.displayProcessesQueues(); // requisicao de exibicao do escalonador de curto prazo
+            // abaixo construcao e exibicao das estatisticas calculadas acima
             statistics = "Simulacao: " + shortTermScheduler.getTranslatedStatus();
 
             statistics = statistics + "\nTempo simulado decorrido: "
@@ -152,7 +158,8 @@ public class UserInterface extends Thread implements NotificationInterface {
                     + throughPutPerTime
                     + " processos/seg ("
                     + throughPutPerCicle + " processos/ciclo)";
-
+            // ao termino da simulacao, exibicao de dados relativos ao tempo de retorno dos
+            // processos
             if (shortTermScheduler.status.equals("finished")) {
                 Double ciclesPerProcess = Double.parseDouble(Integer.toString(totalConcludedReturnCicles))
                         / Double.parseDouble(Integer.toString(totalConcludedProcesses));
@@ -359,7 +366,7 @@ public class UserInterface extends Thread implements NotificationInterface {
     }
 
     /**
-     * Método para a leitura de conteúdo do arquivo
+     * Metodo para a leitura de conteúdo do arquivo
      * 
      * @param file arquivo de texto a ser lido
      * @return retorna uma String com o conteúdo do arquivo
@@ -378,10 +385,17 @@ public class UserInterface extends Thread implements NotificationInterface {
         return content.toString();
     }
 
+    /**
+     * Extrai o tempo de retorno dos processos e os armazena prontos para exibicao
+     * 
+     * @param concludedProcess processo do qual os dados serão extraidos
+     */
     public void addConcludedProcessData(Process concludedProcess) {
-
+        int turnAround = concludedProcess.getTurnaround();
+        int timeSlice = shortTermScheduler.getTimeSlice();
+        double turnAroundTime = Double.parseDouble(Integer.toString(turnAround * timeSlice)) / 1000;
         concludedProcessesData += "\n" + "- Tempo de retorno (" + concludedProcess.getFileName() + "): "
-                + concludedProcess.getTurnaround();
+                + String.format("%.2f", turnAroundTime) + " (" + turnAround + " ciclos)";
         totalConcludedReturnCicles += concludedProcess.getTurnaround();
     }
 
