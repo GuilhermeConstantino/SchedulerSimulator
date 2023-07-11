@@ -10,20 +10,24 @@ import java.util.List;
  */
 public class LongTermScheduler extends Thread implements SubmissionInterface {
 
-    private List<Process> processQueue = new ArrayList<>();
-    private UserInterface userInterface = UserInterface.getUserInterface();
-    private ShortTermScheduler shortTermScheduler = ShortTermScheduler.getShortTermScheduler();
-    private static LongTermScheduler longTermScheduler;
-    private String status = "dormant";
-    private int totalSubmittedProcesses = 0;
+    private List<Process> newProcessesQueue;
+    private UserInterface userInterface;
+    private ShortTermScheduler shortTermScheduler;
+    private int totalSubmittedProcesses;
+    private int maxProcessLoad;
 
     /**
      * Construtor privado para forcar o uso do getLongTermScheduler
      * 
-     * @author Raphael
-     * 
+     * @author Raphael Morraye
+     * @author Guilherme Constantino
      */
-    private LongTermScheduler() {
+    public LongTermScheduler(UserInterface userInterface, ShortTermScheduler shortTermScheduler, int maxProcessLoad) {
+        this.userInterface = userInterface;
+        this.shortTermScheduler = shortTermScheduler;
+        this.maxProcessLoad = maxProcessLoad;
+        newProcessesQueue = new ArrayList<>();
+        totalSubmittedProcesses = 0;
     }
 
     /**
@@ -34,17 +38,17 @@ public class LongTermScheduler extends Thread implements SubmissionInterface {
      */
     public void run() {
 
-        while (status != "shutdown") {
+        while (true) {
             try {
                 Thread.sleep(shortTermScheduler.getTimeSlice() / 2);
             } catch (InterruptedException e) {
 
                 e.printStackTrace();
             }
-            if (shortTermScheduler.status.equals("running")) {
-                if (shortTermScheduler.getProcessLoad() < shortTermScheduler.getMaxProcessLoad()
-                        && !processQueue.isEmpty()) {
-                    Process sendProcess = processQueue.remove(0);
+            if (shortTermScheduler.getCurrentSimulationStatus() == "running") {
+                if (shortTermScheduler.getProcessLoad() < maxProcessLoad
+                        && !newProcessesQueue.isEmpty()) {
+                    Process sendProcess = newProcessesQueue.remove(0);
                     shortTermScheduler.addProcess(sendProcess);
                     userInterface.displayNotification("Processo " + sendProcess.getFileName() + " aceito");
                 }
@@ -89,13 +93,10 @@ public class LongTermScheduler extends Thread implements SubmissionInterface {
         }
 
         Process newProcess = new Process(fileName, instructions, priority);
-        // for (int i = 0; i < instructions.size(); i++) {
-        // userInterface.display(instructions.get(i).getCommand());
-        // }
         int submitionCicles = shortTermScheduler.getTotalCicles();
         newProcess.setCiclesOnSubmition(submitionCicles);
 
-        processQueue.add(newProcess);
+        newProcessesQueue.add(newProcess);
         totalSubmittedProcesses++;
         return true;
     }
@@ -110,72 +111,22 @@ public class LongTermScheduler extends Thread implements SubmissionInterface {
 
         String queueDescription = "";
 
-        for (int i = 0; i < processQueue.size(); i++) {
+        for (int i = 0; i < newProcessesQueue.size(); i++) {
 
-            queueDescription = queueDescription + "[" + i + "] " + processQueue.get(i).getFileName() + "\n";
+            queueDescription = queueDescription + "[" + i + "] " + newProcessesQueue.get(i).getFileName() + "\n";
 
         }
 
         userInterface.displayLongQueue(queueDescription);
-    }
-
-    /**
-     * Sinaliza o encerramento do simulador
-     * 
-     * @author Guilherme Constantino
-     */
-    public void shutDown() {
-        status = "shutdown";
-    }
-
-    // Getters e setters
-
-    public List<Process> getProcessQueue() {
-        return processQueue;
-    }
-
-    public void setProcessQueue(List<Process> processQueue) {
-        this.processQueue = processQueue;
-    }
-
-    public UserInterface getUserInterface() {
-        return userInterface;
-    }
-
-    public void setUserInterface(UserInterface userInterface) {
-        this.userInterface = userInterface;
-    }
-
-    public ShortTermScheduler getShortTermScheduler() {
-        return shortTermScheduler;
-    }
-
-    public void setShortTermScheduler(ShortTermScheduler shortTermScheduler) {
-        this.shortTermScheduler = shortTermScheduler;
-    }
-
-    public static void setLongTermScheduler(LongTermScheduler longTermScheduler) {
-        LongTermScheduler.longTermScheduler = longTermScheduler;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public static LongTermScheduler getLongTermScheduler() {
-        if (longTermScheduler == null) {
-            longTermScheduler = new LongTermScheduler();
-        }
-        return longTermScheduler;
-
+        System.out.println(queueDescription);
     }
 
     public int getTotalSubmittedProcesses() {
         return totalSubmittedProcesses;
+    }
+
+    public int getNewProcessesQueueSize() {
+        return newProcessesQueue.size();
     }
 
 }

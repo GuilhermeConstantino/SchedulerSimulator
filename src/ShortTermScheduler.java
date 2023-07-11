@@ -1,6 +1,5 @@
 
 import java.util.ArrayList;
-
 import java.util.List;
 
 /**
@@ -8,43 +7,38 @@ import java.util.List;
  * 
  * @author Guilherme Constantino
  */
-public class ShortTermScheduler extends Thread implements InterSchedulerInterface, ControllInterface {
-    private List<Process> readyProcesses = new ArrayList<>(); // fila de processos prontos
-    private List<Process> blockedProcesses = new ArrayList<>(); // fila de processos bloqueados
-    private UserInterface userInterface = UserInterface.getUserInterface(); // instância de interface de usuario
-    private LongTermScheduler longTermScheduler; // instância do escalonador
-
-    // de longo prazo
-    String status = "uninitialized"; // sinalizador inicio, pausa, continuacao ou encerramento
-    private static ShortTermScheduler shortTermScheduler; // instancia do escalonador de curto prazo
-    private int timeSlice = -1; // fatia de tempo do escalonador, valores negativos indicam que ainda nao foi
-                                // inicializado
-    private int totalCicles = 0; // contador de ciclos totais
-    private int executionCicles = 0; // contador de operacoes de execute
-    private int concludedProcesses = 0; // contador de processos concluidos
-
-    private String selectedAlgorithm = "";
-    private boolean preempt = false; // variavel que sinaliza a preempcao do processo
-    private Process executingProcess; // variavel que armazena o processo em execucao
-
-    private int maxProcessLoad = -1; // carga máxima de processos, valores negativos indicam que ainda não foi
-                                     // estabelecida
-
-    private ShortTermScheduler() {
+public abstract class ShortTermScheduler extends Thread implements InterSchedulerInterface, ControllInterface {
+    public enum Status {
+        UNINITIALIZED, RUNNING, BLOCKED, SUSPENDED, FINISHED
     }
 
-    /**
-     * Método de instanciação seguindo o padrão de design singleton
-     * 
-     * @return Retorna instancia unica da classe ou caso nao haja cria uma nova
-     * @author Guilherme Constantino
-     */
-    public static ShortTermScheduler getShortTermScheduler() { // método de instanciação de um singleton
-        if (shortTermScheduler == null) {
-            shortTermScheduler = new ShortTermScheduler();
-        }
-        return shortTermScheduler;
+    protected Status currentSimulationStatus; // representa o estado atual da simulação
+    protected List<Process> readyProcessesQueue; // fila de processos prontos
+    protected List<Process> blockedProcesses; // fila de processos bloqueados
+    protected List<Process> concludedProcesses; // processos concluidos
+    protected UserInterface userInterface; // instância de interface de usuario
 
+    protected int timeSlice; // fatia de tempo do escalonador, valores negativos indicam que ainda nao foi
+
+    public int getTimeSlice() {
+        return timeSlice;
+    }
+
+    // inicializado
+    protected int totalCicles; // contador de ciclos totais
+    protected int executionCicles; // contador de operacoes de execute
+    protected Process executingProcess; // variavel que armazena o processo em execucao
+
+    public ShortTermScheduler(UserInterface userInterface, int timeSlice) {
+        this.userInterface = userInterface;
+        this.timeSlice = timeSlice;
+
+        currentSimulationStatus = Status.UNINITIALIZED;
+        totalCicles = 0;
+        executionCicles = 0;
+        readyProcessesQueue = new ArrayList<>();
+        blockedProcesses = new ArrayList<>();
+        concludedProcesses = new ArrayList<>();
     }
 
     /**
@@ -52,99 +46,7 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
      * 
      * @author Guilherme Constantino
      */
-    public void run() {
-        while (status != "shutdown") { // mantém o escalonador ativo até que seja desligado
-            try {
-                Thread.sleep(timeSlice); // simula o tempo gasto por cada processo para executar uma instrução
-            } catch (InterruptedException e) {
-
-                e.printStackTrace();
-            }
-
-            while (status.equals("running")) {
-                if (readyProcesses.isEmpty()) { // verifica se há processos a serem executados
-                    if (blockedProcesses.isEmpty()) { // verifica se há processos bloqueados em espera
-                        if (longTermScheduler.getProcessQueue().isEmpty()) { // verifica se há processos submetidos mas
-                                                                             // ainda não admitidos
-                            userInterface.displayNotification("Fila de processos vazia");
-                            stopSimulation(); // encerra a simulação
-                        } else {
-                            continue; // reinicia o loop para aguardar os novos processos
-                        }
-                    } else { // este caso ocorre quando ha processos bloquados mas nao ha processos em
-                             // execucao
-                        tickBlockedProcesses(); // simula a contagem de tempo dos processos bloquados e reinicia o ciclo
-                        try {
-                            Thread.sleep(timeSlice); // simula o tempo gasto por cada processo para executar uma
-                                                     // instrução
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-
-                        totalCicles++;
-
-                        continue;
-                    }
-                } else {
-
-                    executingProcess = readyProcesses.remove(0);
-                    preempt = false;
-                    while (!preempt) {
-                        BehaviourStatement nextStatement = executingProcess.getBehaviourStatement(0);
-                        tickBlockedProcesses();
-                        try {
-                            Thread.sleep(timeSlice); // simula execução da instrução
-                        } catch (InterruptedException e) {
-
-                            e.printStackTrace();
-                        }
-
-                        if (nextStatement.command.equals("block")) {
-
-                            blockedProcesses.add(executingProcess);
-
-                            userInterface.displayNotification("Block " + "["
-                                    + nextStatement.blockPeriod + "] " + executingProcess.getFileName());
-                            executingProcess = null;
-                            totalCicles++;
-                            executionCicles++;
-                            preempt = true;
-                        } else if (nextStatement.command.equals("execute")) {
-
-                            userInterface.displayNotification("Execute " + executingProcess.getFileName());
-                            totalCicles++;
-                            executionCicles++;
-                            executingProcess.removeNextBehaviourStatement();
-                            if (selectedAlgorithm.equals("RR")) { // caso o algoritmo seja RR, considera-se que o
-                                                                  // processo
-                                // utilizou seu quantum e portanto o mesmo é preemptado
-                                // para o fim da fila
-                                readyProcesses.add(executingProcess);
-                                executingProcess = null;
-                                preempt = true;
-                            } else if (selectedAlgorithm.equals("FIFO")) {
-                                continue;
-                            }
-
-                        } else { // caso o próximo comando não seja execute ou block, entende-se que o processo
-                                 // chegou ao fim
-                            concludedProcesses++;
-                            userInterface.displayNotification(
-                                    "Processo " + executingProcess.getFileName() + " terminado");
-
-                            executingProcess.setCiclesOnTermination(totalCicles);
-                            executingProcess.setTurnaround();
-                            userInterface.addConcludedProcessData(executingProcess);
-                            executingProcess = null;
-                            preempt = true;
-                        }
-                    }
-                }
-
-            }
-        }
-
-    }
+    public abstract void run();
 
     /**
      * Metodo que reduz em um o tempo de bloqueio dos processos bloqueados e
@@ -153,7 +55,8 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
      * 
      * @author Guilherme Constantino
      */
-    private void tickBlockedProcesses() {
+
+    protected void tickBlockedProcesses() {
 
         for (int i = blockedProcesses.size() - 1; i >= 0; i--) {
             Process process = blockedProcesses.get(i);
@@ -162,7 +65,7 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
             if (--statement.blockPeriod == 0) {
                 userInterface.displayNotification("Termino de bloqueio de " + process.getFileName());
                 process.removeNextBehaviourStatement();
-                readyProcesses.add(process);
+                readyProcessesQueue.add(process);
                 blockedProcesses.remove(i);
             } else {
                 userInterface.displayNotification(
@@ -175,7 +78,7 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
 
         userInterface.displayNotification("Novo processo " + process.getFileName() + " adicionado!");
 
-        readyProcesses.add(process); // adiciona o processo ao fim da fila
+        readyProcessesQueue.add(process); // adiciona o processo ao fim da fila
 
     }
 
@@ -186,22 +89,11 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
      */
     @Override
     public void startSimulation() {
-        if (maxProcessLoad < 1) {
-            userInterface.displayNotification(
-                    "Nao foi possivel iniciar a simulacao: carga máxima invalida");
-            return;
-        } else if (readyProcesses.isEmpty() && longTermScheduler.getProcessQueue().isEmpty()) {
-            userInterface.displayNotification("Nao foi possivel iniciar a simulacao: fila de processo vazia");
-            return;
-        } else if (timeSlice < 1) {
-            userInterface.displayNotification("Nao foi possivel iniciar a simulacao: fatia de tempo invalida");
-            return;
-        }
-        if (status.equals("uninitialized")) {
+        if (currentSimulationStatus == Status.UNINITIALIZED) {
             userInterface.displayNotification("Simulacao iniciada");
-            status = "running";
+            currentSimulationStatus = Status.RUNNING;
         } else {
-            userInterface.displayNotification("Erro: simulacao ja foi inicializada");
+            userInterface.displayNotification("Erro: simulação já foi inicializada");
         }
     }
 
@@ -211,13 +103,17 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
      * @author Guilherme Constantino
      */
     @Override
-    public void suspendSimulation() {
-        if (status.equals("running")) {
-            status = "suspended";
-            userInterface.displayNotification(
-                    "Simulacao suspensa");
+    public synchronized void suspendSimulation() {
+        if (currentSimulationStatus == Status.RUNNING) {
+            currentSimulationStatus = Status.SUSPENDED;
+            userInterface.displayNotification("Simulação suspensa");
+            try {
+                wait(); // Wait until notified to continue
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         } else {
-            userInterface.displayNotification("Erro: simulacao nao se encontra em execucao");
+            userInterface.displayNotification("Erro: simulação não está em execução");
         }
     }
 
@@ -228,8 +124,9 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
      */
     @Override
     public void resumeSimulation() {
-        if (status.equals("suspended")) {
-            status = "running";
+        if (currentSimulationStatus == Status.BLOCKED) {
+            currentSimulationStatus = Status.RUNNING;
+            notify();
             userInterface.displayNotification(
                     "Simulacao retomada");
         } else {
@@ -244,10 +141,10 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
      */
     @Override
     public void stopSimulation() {
-        if (status.equals("running") || status.equals("suspended")) {
+        if (currentSimulationStatus == Status.RUNNING || currentSimulationStatus == Status.BLOCKED) {
+            currentSimulationStatus = Status.FINISHED;
             userInterface.displayNotification("Encerrando simulacao");
-            readyProcesses.clear();
-            status = "finished";
+            readyProcessesQueue.clear();
         } else {
             userInterface.displayNotification("Erro: simulacao nao esta suspensa ou em execucao");
         }
@@ -263,17 +160,18 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
     public void displayProcessesQueues() {
         String queueDescription = "";
         if (executingProcess != null) {
-            queueDescription = " [Executando] " + executingProcess.getFileName() + "\n";
+            queueDescription = "Processo em execução: \n" + executingProcess.getFileName() + "\n";
         }
-        if (!readyProcesses.isEmpty()) {
-            for (int i = 0; i < readyProcesses.size(); i++) {
+        queueDescription = queueDescription + "Fila de prontos: \n";
+        if (!readyProcessesQueue.isEmpty()) {
+            for (int i = 0; i < readyProcessesQueue.size(); i++) {
 
-                queueDescription = queueDescription + " [" + i + "] " + readyProcesses.get(i).getFileName() + "\n";
+                queueDescription = queueDescription + " [" + i + "] " + readyProcessesQueue.get(i).getFileName() + "\n";
 
             }
         }
 
-        queueDescription = queueDescription + "\nProcessos bloquados:\n";
+        queueDescription = queueDescription + "\nFila de bloquados:\n";
 
         for (int i = 0; i < blockedProcesses.size(); i++) {
 
@@ -286,97 +184,36 @@ public class ShortTermScheduler extends Thread implements InterSchedulerInterfac
         userInterface.displayShortQueue(queueDescription);
     }
 
-    public void shutDown() {
-        status = "shutdown";
-    }
-
-    // getters e setters
-    public String getStatus() {
-        return status;
-    }
-
-    public String getTranslatedStatus() {
-        if (status == "uninitialized") {
-            return "nao inicializada";
-        } else if (status == "running") {
-            return "executando";
-        } else if (status == "suspended") {
-            return "suspensa";
-        } else {
-            return "encerrada";
-        }
-    }
-
-    public String getSelectedAlgorithm() {
-        return selectedAlgorithm;
-    }
-
-    public void setSelectedAlgorithm(String selectedAlgorithm) {
-        this.selectedAlgorithm = selectedAlgorithm;
-    }
-
-    public List<Process> getReadyProcesses() {
-        return readyProcesses;
-    }
-
-    public void setReadyProcesses(List<Process> processesQueue) {
-        this.readyProcesses = processesQueue;
-    }
-
-    public List<Process> getBlockedProcesses() {
-        return blockedProcesses;
-    }
-
     public int getTotalCicles() {
         return totalCicles;
     }
 
-    public void setBlockedProcesses(List<Process> blockedProcesses) {
-        this.blockedProcesses = blockedProcesses;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public static void setShortTermScheduler(ShortTermScheduler shortTermScheduler) {
-        ShortTermScheduler.shortTermScheduler = shortTermScheduler;
-    }
-
-    public int getTimeSlice() {
-        return timeSlice;
-    }
-
-    public void setUserInterface(UserInterface userInterface) {
-        this.userInterface = userInterface;
+    public String getCurrentSimulationStatus() {
+        if (currentSimulationStatus == Status.UNINITIALIZED) {
+            return "uninitialized";
+        } else if (currentSimulationStatus == Status.RUNNING) {
+            return "running";
+        } else if (currentSimulationStatus == Status.SUSPENDED) {
+            return "suspended";
+        } else {
+            return "finished";
+        }
     }
 
     public int getProcessLoad() { // método para obter
-        int load = readyProcesses.size() + blockedProcesses.size();
+        int load = readyProcessesQueue.size() + blockedProcesses.size();
         if (executingProcess != null) // caso algum processo esteja em execução e portanto fora da fila ele é
                                       // acrescentado a contagem
             load++;
         return load;
     }
 
-    public void setMaxProcessLoad(int maxLoad) { // método para estabelecer a carga máxima de processos
-        maxProcessLoad = maxLoad;
-    }
-
-    public int getMaxProcessLoad() {
-        return maxProcessLoad;
-    }
-
     public void setTimeSlice(int time) {
         this.timeSlice = time;
     }
 
-    public void setLongTermScheduler(LongTermScheduler longTermScheduler) {
-        this.longTermScheduler = longTermScheduler;
-    }
-
     public int getTotalConcludedProcesses() {
-        return concludedProcesses;
+        return concludedProcesses.size();
     }
 
     public int getExecutionCicles() {
