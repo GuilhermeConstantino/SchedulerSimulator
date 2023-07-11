@@ -58,7 +58,7 @@ public class LongTermScheduler extends Thread implements SubmissionInterface {
 
     /**
      * Transforma uma String em process e a envia para a fila do escalonador de
-     * longo prazo
+     * longo prazo.
      * 
      * @author Raphael Morraye
      * @author Guilherme Constantino
